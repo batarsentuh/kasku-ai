@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>KasKu AI — Asisten Arus Kas Warung & UMKM</title>
+<meta name="description" content="KasKu AI membantu pemilik warung dan UMKM mencatat transaksi dengan bahasa sehari-hari, memprediksi arus kas 7 hari ke depan, dan memberi saran keuangan yang spesifik dari data mereka sendiri.">
+<link rel="stylesheet" href="styles.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💚</text></svg>">
+</head>
+<body>
+<div class="phone">
+
+  <header class="appbar">
+    <div class="brand">
+      <div class="logo">K</div>
+      <div>
+        <h1>KasKu <span class="ai">AI</span></h1>
+        <p id="shopLine">Asisten arus kas warung &amp; UMKM</p>
+      </div>
+    </div>
+    <button id="resetBtn" class="ghost-btn" title="Muat ulang data demo">↺ Demo</button>
+  </header>
+
+  <!-- ============ VIEW: BERANDA ============ -->
+  <main id="view-home" class="view active">
+    <section class="balance-card">
+      <p class="bc-label">Saldo kas saat ini</p>
+      <p class="bc-value" id="balanceValue">Rp0</p>
+      <p class="bc-date" id="balanceDate"></p>
+      <div class="bc-row">
+        <div class="bc-stat"><span class="dot in"></span>Masuk hari ini<b id="todayIn">Rp0</b></div>
+        <div class="bc-stat"><span class="dot out"></span>Keluar hari ini<b id="todayOut">Rp0</b></div>
+        <div class="bc-stat"><span class="dot net"></span>Bersih 7 hari<b id="weekNet">Rp0</b></div>
+      </div>
+    </section>
+
+    <section class="card quickadd">
+      <h2>✍️ Catat cepat — tulis seperti ngobrol</h2>
+      <div class="qa-row">
+        <input id="qaInput" type="text" autocomplete="off"
+          placeholder='cth: "beli beras 460rb" atau "jual kopi 15rb"'>
+        <button id="qaAdd" class="primary-btn">Simpan</button>
+      </div>
+      <div id="qaPreview" class="qa-preview hidden"></div>
+      <div class="qa-examples">
+        <button class="chip ex">jual indomie 25rb</button>
+        <button class="chip ex">Budi utang 50rb</button>
+        <button class="chip ex">bayar listrik 200rb</button>
+        <button class="chip ex">Budi bayar utang 50rb</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <h2>📊 Arus kas 14 hari terakhir</h2>
+      </div>
+      <canvas id="flowChart" height="180"></canvas>
+      <div class="legend"><span><i class="sw in"></i>Masuk</span><span><i class="sw out"></i>Keluar</span></div>
+    </section>
+
+    <section class="card" id="topInsightCard">
+      <div class="card-head"><h2>🤖 Wawasan AI hari ini</h2><button class="link-btn" data-goto="insights">Lihat semua →</button></div>
+      <div id="topInsight"></div>
+    </section>
+
+    <section class="card hidden" id="recvCard">
+      <div class="card-head"><h2>🧾 Piutang belum tertagih</h2><b id="recvTotal"></b></div>
+      <ul id="recvList" class="recv-list"></ul>
+    </section>
+  </main>
+
+  <!-- ============ VIEW: TRANSAKSI ============ -->
+  <main id="view-tx" class="view">
+    <section class="card">
+      <h2>➕ Tambah transaksi manual</h2>
+      <form id="manualForm" class="manual-form">
+        <label>Jenis
+          <select id="mfType">
+            <option value="in">Uang masuk</option>
+            <option value="out">Uang keluar</option>
+            <option value="debt">Piutang (pelanggan ngutang)</option>
+            <option value="debtpay">Pelanggan bayar utang</option>
+          </select>
+        </label>
+        <label>Jumlah (boleh "150rb")
+          <input id="mfAmount" type="text" inputmode="numeric" placeholder="150rb" required>
+        </label>
+        <label>Kategori
+          <select id="mfCategory">
+            <option>Penjualan</option><option>Stok &amp; Bahan</option><option>Operasional</option>
+            <option>Transport</option><option>Piutang</option><option>Lainnya</option>
+          </select>
+        </label>
+        <label>Nama pelanggan (untuk piutang)
+          <input id="mfPerson" type="text" placeholder="cth: Budi">
+        </label>
+        <label class="full">Keterangan
+          <input id="mfNote" type="text" placeholder="cth: kulakan beras & gula">
+        </label>
+        <button class="primary-btn full" type="submit">Simpan transaksi</button>
+      </form>
+    </section>
+
+    <section class="card">
+      <div class="card-head"><h2>📒 Riwayat transaksi</h2></div>
+      <div class="filter-row" id="txFilters">
+        <button class="chip f active" data-f="all">Semua</button>
+        <button class="chip f" data-f="in">Masuk</button>
+        <button class="chip f" data-f="out">Keluar</button>
+        <button class="chip f" data-f="debt">Piutang</button>
+      </div>
+      <div id="txList"></div>
+    </section>
+  </main>
+
+  <!-- ============ VIEW: WAWASAN ============ -->
+  <main id="view-insights" class="view">
+    <section class="card">
+      <div class="card-head"><h2>🔮 Prediksi kas 7 hari ke depan</h2></div>
+      <canvas id="forecastChart" height="190"></canvas>
+      <div class="fc-stats">
+        <div class="fc-stat"><span>Rata-rata bersih / hari</span><b id="fcDaily">–</b></div>
+        <div class="fc-stat"><span>Saldo akhir prediksi</span><b id="fcEnd">–</b></div>
+        <div class="fc-stat"><span>Ketahanan kas</span><b id="fcRunway">–</b></div>
+      </div>
+      <p class="fineprint">Prediksi dihitung dari tren 14 hari terakhir (regresi tren + rata-rata 7 hari), seluruhnya di perangkatmu — tanpa server, tanpa biaya.</p>
+    </section>
+
+    <section class="card">
+      <div class="card-head"><h2>💡 Wawasan &amp; saran AI</h2></div>
+      <div id="insightList"></div>
+    </section>
+
+    <section class="card">
+      <div class="card-head"><h2>🧮 Pengeluaran per kategori (30 hari)</h2></div>
+      <div id="catBars"></div>
+    </section>
+  </main>
+
+  <!-- ============ VIEW: CHAT ============ -->
+  <main id="view-chat" class="view">
+    <section class="chat-wrap">
+      <div id="chatLog" class="chat-log"></div>
+      <div class="chat-chips" id="chatChips">
+        <button class="chip q">Berapa saldo saya?</button>
+        <button class="chip q">Pemasukan minggu ini?</button>
+        <button class="chip q">Kapan kas saya habis?</button>
+        <button class="chip q">Siapa yang masih punya utang?</button>
+        <button class="chip q">Pengeluaran terbesar?</button>
+        <button class="chip q">Minta saran hemat</button>
+      </div>
+      <form id="chatForm" class="chat-form">
+        <input id="chatInput" type="text" autocomplete="off" placeholder="Tanya soal keuangan warungmu…">
+        <button class="primary-btn" type="submit">Kirim</button>
+      </form>
+    </section>
+  </main>
+
+  <nav class="tabbar">
+    <button class="tab active" data-view="home"><span>🏠</span>Beranda</button>
+    <button class="tab" data-view="tx"><span>📒</span>Transaksi</button>
+    <button class="tab" data-view="insights"><span>💡</span>Wawasan</button>
+    <button class="tab" data-view="chat"><span>🤖</span>Tanya AI</button>
+  </nav>
+
+  <div id="toast" class="toast hidden"></div>
+</div>
+<script src="logic.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
